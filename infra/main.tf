@@ -1,4 +1,4 @@
-resource "aws_vpc" "dhruv_vpc" {
+resource "aws_vpc" "tluth_vpc" {
   cidr_block           = "10.123.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -8,8 +8,8 @@ resource "aws_vpc" "dhruv_vpc" {
   }
 }
 
-resource "aws_subnet" "dhruv_public_subnet" {
-  vpc_id                  = aws_vpc.dhruv_vpc.id
+resource "aws_subnet" "tluth_public_subnet" {
+  vpc_id                  = aws_vpc.tluth_vpc.id
   cidr_block              = "10.123.1.0/24"
   map_public_ip_on_launch = true
   availability_zone       = "ap-south-1a"
@@ -19,16 +19,16 @@ resource "aws_subnet" "dhruv_public_subnet" {
   }
 }
 
-resource "aws_internet_gateway" "dhruv_internet_gateway" {
-  vpc_id = aws_vpc.dhruv_vpc.id
+resource "aws_internet_gateway" "tluth_internet_gateway" {
+  vpc_id = aws_vpc.tluth_vpc.id
 
   tags = {
     Name = "dev-igw"
   }
 }
 
-resource "aws_route_table" "dhruv_public_rt" {
-  vpc_id = aws_vpc.dhruv_vpc.id
+resource "aws_route_table" "tluth_public_rt" {
+  vpc_id = aws_vpc.tluth_vpc.id
 
   tags = {
     Name = "dev_public_rt"
@@ -36,20 +36,20 @@ resource "aws_route_table" "dhruv_public_rt" {
 }
 
 resource "aws_route" "def_route" {
-  route_table_id         = aws_route_table.dhruv_public_rt.id
+  route_table_id         = aws_route_table.tluth_public_rt.id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.dhruv_internet_gateway.id
+  gateway_id             = aws_internet_gateway.tluth_internet_gateway.id
 }
 
-resource "aws_route_table_association" "dhruv_public_assoc" {
-  subnet_id      = aws_subnet.dhruv_public_subnet.id
-  route_table_id = aws_route_table.dhruv_public_rt.id
+resource "aws_route_table_association" "tluth_public_assoc" {
+  subnet_id      = aws_subnet.tluth_public_subnet.id
+  route_table_id = aws_route_table.tluth_public_rt.id
 }
 
-resource "aws_security_group" "dhruv_sg" {
+resource "aws_security_group" "tluth_sg" {
   name        = "dev_sg"
   description = "dev security Group"
-  vpc_id      = aws_vpc.dhruv_vpc.id
+  vpc_id      = aws_vpc.tluth_vpc.id
   ingress {
     from_port   = 0
     to_port     = 0
@@ -64,30 +64,30 @@ resource "aws_security_group" "dhruv_sg" {
   }
 }
 
-resource "aws_key_pair" "dhruv_auth" {
- key_name   = "dhruvkey"
- public_key = file("~/.ssh/dhruvkey.pub")
+resource "aws_key_pair" "tluth_auth" {
+  key_name   = "tluthkey"
+  public_key = file("~/.ssh/tluthkey.pub")
 }
 
-resource "aws_instance" "dhruv_node" {
+resource "aws_instance" "tluth_node" {
   instance_type          = "t2.micro"
   ami                    = data.aws_ami.server_ami.id
-  key_name               = aws_key_pair.dhruv_auth.id
-  vpc_security_group_ids = [aws_security_group.dhruv_sg.id]
-  subnet_id              = aws_subnet.dhruv_public_subnet.id
+  key_name               = aws_key_pair.tluth_auth.id
+  vpc_security_group_ids = [aws_security_group.tluth_sg.id]
+  subnet_id              = aws_subnet.tluth_public_subnet.id
   user_data              = file("userdata.tpl")
   root_block_device {
     volume_size = 10
   }
   tags = {
-    Name = "dhruv-node"
+    Name = "tluth-node"
   }
 
- provisioner "local-exec" {
+  provisioner "local-exec" {
     command = templatefile("${var.host_os}-ssh-config.tpl", {
       hostname     = self.public_ip,
       user         = "ubuntu",
-      identityfile = "~/.ssh/dhruvkey"
+      identityfile = "~/.ssh/tluthkey"
     })
     interpreter = var.host_os == "windows" ? ["Powershell", "-command"] : ["bash", "-c"]
   }

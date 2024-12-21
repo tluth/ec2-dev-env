@@ -12,7 +12,7 @@ resource "aws_subnet" "tluth_public_subnet" {
   vpc_id                  = aws_vpc.tluth_vpc.id
   cidr_block              = "10.123.1.0/24"
   map_public_ip_on_launch = true
-  availability_zone       = "ap-south-1a"
+  availability_zone       = "eu-central-1a"
 
   tags = {
     Name = "dev-public"
@@ -66,7 +66,7 @@ resource "aws_security_group" "tluth_sg" {
 
 resource "aws_key_pair" "tluth_auth" {
   key_name   = "tluthkey"
-  public_key = file("~/.ssh/tluthkey.pub")
+  public_key = file("~/.ssh/ec2-dev-env-keypair.pub")
 }
 
 resource "aws_instance" "tluth_node" {
@@ -87,7 +87,7 @@ resource "aws_instance" "tluth_node" {
     command = templatefile("${var.host_os}-ssh-config.tpl", {
       hostname     = self.public_ip,
       user         = "ubuntu",
-      identityfile = "~/.ssh/tluthkey"
+      identityfile = "~/.ssh/ec2-dev-env-keypair"
     })
     interpreter = var.host_os == "windows" ? ["Powershell", "-command"] : ["bash", "-c"]
   }
